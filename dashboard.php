@@ -9,7 +9,12 @@
  *   hidden   → 无法访问，占位保留
  *   deleted  → 彻底清除（不在 auth.json 中保留）
  */
-define('DASH_PASS', 'superSC2026');   // ← 修改此处
+// ── 看板密码：优先读 data/sc_config.json 的 dash_pass 字段，文件不存在则用下方默认值 ──
+$_sc_pw = file_exists(__DIR__.'/data/sc_config.json')
+    ? (json_decode(file_get_contents(__DIR__.'/data/sc_config.json'),true)??[])
+    : [];
+define('DASH_PASS', $_sc_pw['dash_pass'] ?? 'superSC2026');
+unset($_sc_pw);
 define('DASH_VER',  'V0.23');
 define('AUTH_FILE', __DIR__.'/data/auth.json');
 define('CFG_FILE',  __DIR__.'/data/sc_config.json');

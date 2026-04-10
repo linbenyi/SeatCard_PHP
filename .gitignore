@@ -7,6 +7,10 @@ data/*
 backup/
 Backupdata/
 
+# ── 含密码的后台文件（本地使用，不上传）──
+admin.php
+dashboard.php
+
 # ── 个人 / 无关文件 ──
 *.xlsx
 WS13.html

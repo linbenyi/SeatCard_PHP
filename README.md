@@ -8,6 +8,10 @@
 ![License](https://img.shields.io/badge/license-MIT-2FBB7A)
 ![Version](https://img.shields.io/badge/version-V0.24-blue)
 
+![SeatCard 预览](preview.png)
+
+![SeatCard 演示](preview.gif)
+
 ---
 
 ## ✨ 为什么选择 SeatCard

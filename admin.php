@@ -5,8 +5,12 @@
  * 功能：生成场次、查看/删除会话、注入备份文件
  */
 
-// ── 简单管理密码（修改此处） ──
-define('ADMIN_PASS', 'admin888');
+// ── 管理密码：优先读 data/sc_config.json 的 admin_pass 字段，文件不存在则用下方默认值 ──
+$_sc_pw = file_exists(__DIR__.'/data/sc_config.json')
+    ? (json_decode(file_get_contents(__DIR__.'/data/sc_config.json'),true)??[])
+    : [];
+define('ADMIN_PASS', $_sc_pw['admin_pass'] ?? 'admin888');
+unset($_sc_pw);
 define('BASE_DATA_DIR', __DIR__ . '/data/');
 define('ADMIN_CFG_FILE', __DIR__ . '/data/sc_config.json');
 define('SC_ALPHA_ADMIN', '346789ACDEFGHJKLMNPQRSTUVWXY'); // 28字符校验表
