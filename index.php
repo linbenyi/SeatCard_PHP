@@ -782,10 +782,11 @@ body.view-only-mode #paneRight::after{
 @media (min-width:1000px) and (max-width:1200px){#warnBadge{display:none!important}}
 
 /* ═══════════════════════════════════════════════════
-   TABLET/NARROW — 上下分割布局 (≤768px)
-   宾客名单切换为触控紧凑模式，mainLayout 纵向堆叠
+   PHONE-PORTRAIT — 上下分割布局
+   条件：宽度 <768px 且 高宽比 >3:2（竖屏手机）
+   iPad / 平板横屏均不触发此规则
 ═══════════════════════════════════════════════════ */
-@media (max-width:768px){
+@media (max-width:767px) and (max-aspect-ratio:2/3){
   #mainLayout{flex-direction:column!important}
   #paneLeft{flex:0 0 48vh!important;min-width:0!important;width:100%!important;min-height:180px!important}
   #resizeHandle{display:flex!important;width:100%!important;height:10px!important;cursor:row-resize!important;
@@ -795,21 +796,9 @@ body.view-only-mode #paneRight::after{
   #paneRight{flex:1 1 0!important;min-width:0!important;width:100%!important;min-height:160px!important;border-left:none!important;border-top:1px solid #DDE6DC!important}
   #paneRight .tab-btn{font-size:11px!important;padding:6px 12px!important}
 }
-@media (max-width:768px){
+@media (max-width:767px) and (max-aspect-ratio:2/3){
   body.dark-mode #paneRight{border-top-color:#3A3530!important}
 }
-
-/* ═══════════════════════════════════════════════════
-   TOUCH-TABLET — 触控平板强制纵向布局（JS 设置 touch-tablet class）
-   适用：iPad / 安卓平板宽度 >768px 但为触控设备
-═══════════════════════════════════════════════════ */
-body.touch-tablet #mainLayout{flex-direction:column!important}
-body.touch-tablet #paneLeft{flex:0 0 48vh!important;min-width:0!important;width:100%!important;min-height:180px!important}
-body.touch-tablet #resizeHandle{display:flex!important;width:100%!important;height:10px!important;cursor:row-resize!important;flex-shrink:0!important;align-items:center!important;justify-content:center!important;background:#DDE6DC!important;border-top:none!important;border-left:none!important}
-body.touch-tablet #resizeHandle::after{content:'';width:36px;height:3px;background:#AABCAA;border-radius:2px}
-body.touch-tablet #paneRight{flex:1 1 0!important;min-width:0!important;width:100%!important;min-height:160px!important;border-left:none!important;border-top:1px solid #DDE6DC!important}
-body.touch-tablet #paneRight .tab-btn{font-size:11px!important;padding:6px 12px!important}
-body.touch-tablet.dark-mode #paneRight{border-top-color:#3A3530!important}
 
 /* ═══════════════════════════════════════════════════
    MOBILE — iPhone 竖版适配 (≤540px)
@@ -3726,7 +3715,7 @@ function switchTab(name){const isG=name==='guests';document.getElementById('pane
   if(!handle||!L)return;
   let tdrag=false,tStartY=0,tStartH=0;
   handle.addEventListener('touchstart',e=>{
-    if(window.innerWidth>768&&!document.body.classList.contains('touch-tablet'))return;
+    if(!_isPhonePortrait())return;
     e.preventDefault();tdrag=true;
     tStartY=e.touches[0].clientY;tStartH=L.offsetHeight;
     handle.style.background='#2FBB7A';
@@ -3749,7 +3738,7 @@ function switchTab(name){const isG=name==='guests';document.getElementById('pane
   const ha=document.getElementById('hdrActions');
   if(!db||!hl||!ha)return;
   function repos(){
-    if(window.innerWidth<=768||document.body.classList.contains('touch-tablet')){
+    if(_isPhonePortrait()){
       if(db.parentElement!==hl){hl.appendChild(db);db.style.marginLeft='auto';}
     } else {
       if(db.parentElement!==ha){ha.appendChild(db);db.style.marginLeft='';}
@@ -4089,18 +4078,16 @@ async function badgeCopyActive(){
 updateRoomSize();render();setTimeout(zoomReset,100);
 setTimeout(wtnInitToolbar,50);
 // 触屏检测：JS 判断优先于 CSS 媒体查询，防止 Chrome DevTools 模拟漏判
-// 触控平板布局：宽度 >768px 的触控设备添加 touch-tablet class → 强制纵向布局
-// 切回 PC 横向布局时，清除移动端拖拽留下的内联 flex 样式（否则 pane 宽度/高度会残留）
+// 上下分割布局条件：宽度 <768px 且 高宽比 >1.5（竖屏手机）；iPad/平板横屏保持左右布局
+// 切回左右布局时，清除移动端拖拽留下的内联 flex 样式（否则 pane 宽度/高度会残留）
 let _wasCompactLayout=false;
+function _isPhonePortrait(){return window.innerWidth<768&&window.innerHeight/window.innerWidth>1.5;}
 function updateTouchTabletClass(){
-  const isMobileMedia=window.innerWidth<=768;
-  const isTablet=_isTouchDevice&&!isMobileMedia;
-  const isCompact=isMobileMedia||isTablet;
+  const isCompact=_isPhonePortrait();
   const wasCompact=_wasCompactLayout;
   _wasCompactLayout=isCompact;
-  const hadTablet=document.body.classList.contains('touch-tablet');
-  document.body.classList.toggle('touch-tablet',isTablet);
-  // 从紧凑布局切回 PC 横向时，重置内联 flex（还原 HTML 原始比例）
+  document.body.classList.remove('touch-tablet'); // 不再使用 touch-tablet 强制分割
+  // 从上下布局切回左右布局时，重置内联 flex（还原 HTML 原始比例）
   if(wasCompact&&!isCompact){
     const L=document.getElementById('paneLeft');
     const R=document.getElementById('paneRight');
@@ -4108,9 +4095,9 @@ function updateTouchTabletClass(){
     if(R)R.style.flex='';
   }
   // ── Shift+D 调试：布局切换回显 ──
-  if(_tcDebug&&(wasCompact!==isCompact||hadTablet!==isTablet)){
-    const lbl=isCompact?(isTablet?'touch-tablet(纵向)':'mobile(≤768)'):' PC(横向)';
-    console.log('[LAYOUT]',wasCompact?'紧凑':'PC','→',lbl,'| width='+window.innerWidth+'px touch='+_isTouchDevice);
+  if(_tcDebug&&wasCompact!==isCompact){
+    const lbl=isCompact?'phone-portrait(上下)':'PC/tablet(左右)';
+    console.log('[LAYOUT]',wasCompact?'上下':'左右','→',lbl,'| w='+window.innerWidth+' h='+window.innerHeight+' ratio='+(window.innerHeight/window.innerWidth).toFixed(2));
   }
 }
 function applyHintMode(force){
