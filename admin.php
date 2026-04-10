@@ -202,7 +202,8 @@ $sessionsJS=[];
 foreach($authList as $e){$code=$e['code']??'';if(strlen($code)<9)continue;$sessionsJS[]=['code'=>$code,'status'=>$e['status']??'active','note'=>$e['note']??'','createdAt'=>$e['createdAt']??'','autoSave'=>$e['autoSave']??null];}
 usort($sessionsJS,fn($a,$b)=>strcmp(substr($b['code'],0,7),substr($a['code'],0,7)));
 
-function showLogin(){?>
+function showLogin(){
+    echo <<<'HTML'
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SeatCard 管理</title>
 <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Noto Sans SC',sans-serif;background:#0F0F0C;display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -211,7 +212,9 @@ h2{font-size:1rem;color:#D4AA3C;margin-bottom:4px;font-weight:700;letter-spacing
 input[type=password]{width:100%;padding:9px 12px;background:#111110;border:1.5px solid #2A2A22;border-radius:7px;font-size:.92rem;outline:none;font-family:inherit;color:#C0BCA8;transition:border .15s}
 input[type=password]:focus{border-color:#D4AA3C}button{margin-top:12px;width:100%;padding:10px;background:#D4AA3C;color:#0F0F0C;border:none;border-radius:7px;font-size:.88rem;cursor:pointer;font-family:inherit;font-weight:700}</style></head><body>
 <div class="lc"><h2>◈ SEATCARD 管理后台</h2><p class="sub">超级密码</p><form method="POST"><input type="password" name="pass" autofocus><button>登录</button></form></div>
-</body></html><?php}
+</body></html>
+HTML;
+}
 ?>
 <!DOCTYPE html><html lang="zh-CN"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
