@@ -1383,7 +1383,11 @@ body.dark-mode #badgeTip .tip-note{color:#888080!important}
   <div class="modal-box" style="width:min(380px,92vw);padding:24px 22px 20px" onclick="event.stopPropagation()">
     <div style="font-family:'Noto Serif SC',serif;font-size:17px;font-weight:600;color:#1F3B2F;margin-bottom:4px;letter-spacing:.3px">欢迎使用 SeatCard 🎊</div>
     <div style="font-size:11px;color:#5A7A6A;margin-bottom:16px">已创建新场次，请确认信息并设置标题</div>
-    <div id="frInfo" style="background:#F2F6F1;border:1px solid #DDE6DC;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#3A5A4A;line-height:1.9"></div>
+    <div id="frInfo" style="background:#F2F6F1;border:1px solid #DDE6DC;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#3A5A4A;line-height:1.9"></div>
+    <div id="frAsStatus" style="font-size:11px;color:#5A7A6A;margin-bottom:14px;display:flex;align-items:center;gap:6px">
+      <span>自动保存：</span><span id="frAsLabel" style="font-weight:600"></span>
+      <span style="color:#8AA89A;font-size:10px">（可在保存菜单中修改）</span>
+    </div>
     <label style="display:block;font-size:11px;color:#5A7A6A;font-weight:500;margin-bottom:5px">场次标题</label>
     <input id="frTitle" class="fi" type="text" style="font-size:14px;padding:9px 11px;margin-bottom:18px">
     <button onclick="confirmFirstRun()" class="btn btn-accent" style="width:100%;justify-content:center;font-size:13px">确认进入 →</button>
@@ -1484,6 +1488,28 @@ body.dark-mode #badgeTip .tip-note{color:#888080!important}
   </div>
 </div>
 
+<?php
+// ── 自动保存配置（注入到 JS）──
+function _scAsCfg(){
+    $d=['globalEnabled'=>true,'interval'=>10,'minInterval'=>2,'idleMinutes'=>3,'majorOpTrigger'=>true,
+        'majorOps'=>['batchSeat'=>true,'importList'=>true,'addTable'=>true,'deleteTable'=>true,'deleteGuest'=>true,
+                     'seat'=>false,'unseat'=>false,'addGuest'=>false,'moveTable'=>false]];
+    $f=__DIR__.'/data/sc_config.json';
+    if(!file_exists($f))return $d;
+    $c=json_decode(file_get_contents($f),true)??[];
+    if(isset($c['autoSave'])&&is_array($c['autoSave'])){
+        if(isset($c['autoSave']['majorOps']))$c['autoSave']['majorOps']=array_merge($d['majorOps'],$c['autoSave']['majorOps']);
+        return array_merge($d,$c['autoSave']);
+    }
+    return $d;
+}
+$_sc_as_cfg=_scAsCfg();
+$_sc_sess_as=null;
+if($AUTH_CODE){
+    $f2=__DIR__.'/data/auth.json';
+    if(file_exists($f2)){$al=json_decode(file_get_contents($f2),true)??[];foreach($al as $ae){if(($ae['code']??'')===$AUTH_CODE){$_sc_sess_as=$ae['autoSave']??null;break;}}}
+}
+?>
 <script>
 // T7/T8: Auth Code — PHP 注入，前端/后端双重校验
 const AUTH_CODE='<?= htmlspecialchars($AUTH_CODE,ENT_QUOTES) ?>';
@@ -1493,6 +1519,10 @@ const VIEW_PREFIX=VIEW_ONLY?'<?= htmlspecialchars($rawAuth,ENT_QUOTES) ?>':'';
 // WTN 桌名词库（来自 WTN.json）
 const WTN_DATA=<?= file_exists(__DIR__.'/WTN.json')?file_get_contents(__DIR__.'/WTN.json'):'{}' ?>;
 const AUTH_WARNED=<?= $AUTH_WARNED?'true':'false' ?>;
+// 自动保存策略（来自 sc_config.json + auth.json 场次覆盖）
+const SC_AS_CFG=<?= json_encode($_sc_as_cfg) ?>;
+const SC_SESS_AS=<?= json_encode($_sc_sess_as) ?>; // null=继承 | true=强制开 | false=强制关
+let _sessASOverride=SC_SESS_AS; // 运行时可切换
 function authUrl(base){return AUTH_CODE?base+(base.includes('?')?'&':'?')+'auth='+encodeURIComponent(AUTH_CODE):base;}
 // 校验警告横幅
 if(AUTH_WARNED){
@@ -1731,11 +1761,7 @@ function tSize(t){return TABLE_SIZES[t.size||DEFAULT_SIZE]||TABLE_SIZES[DEFAULT_
 function pushUndo(){
   _undoStack.push(JSON.stringify({tables,guests,tableCounter,guestCounter,roomW,roomH}));
   if(_undoStack.length>UNDO_MAX)_undoStack.shift();
-  // 每 5 次操作自动静默保存到服务器
-  if(AUTH_CODE&&!VIEW_ONLY){
-    _autoSaveCounter++;
-    if(_autoSaveCounter>=5){_autoSaveCounter=0;saveJsonServerDirect();}
-  }
+  // 自动保存由 AutoSaveManager 统一调度（定时/空闲/大操作触发）
 }
 function undo(){
   if(!_undoStack.length)return;
@@ -2398,12 +2424,14 @@ function addTable(){
   const num=nextTableNum();
   tables.push({id:tableCounter,x:cx,y:cy,seats:10,type:'shared',label:`第${tableCounter}桌`,size:DEFAULT_SIZE,num});
   selectTable(tableCounter);render();
+  AutoSaveManager.onMajorOp('addTable');
 }
 function selectTable(id){selectedTableId=id;if(id)switchTab('config');render();}
 function deleteSelectedTable(){
   if(!selectedTableId)return;pushUndo();
   guests.forEach(g=>(g.slots||[]).forEach(s=>{if(s.seatedTableId===selectedTableId){s.seatedTableId=null;s.seatedSeat=null;}}));
   tables=tables.filter(t=>t.id!==selectedTableId);selectedTableId=null;render();
+  AutoSaveManager.onMajorOp('deleteTable');
 }
 function editLabel(t){const l=prompt('圆桌名称：',t.label);if(l!==null){t.label=l;render();}}
 function removeSeat(tid,si){const f=findSlot(tid,si);if(f){f.s.seatedTableId=null;f.s.seatedSeat=null;render();}}
@@ -2554,6 +2582,7 @@ function deleteTable(id){
   tables=tables.filter(t=>t.id!==id);
   if(selectedTableId===id)selectedTableId=null;
   render();
+  AutoSaveManager.onMajorOp('deleteTable');
 }
 function setTT(type){if(!type)return;pushUndo();const t=tables.find(t=>t.id===selectedTableId);if(t){t.type=type;render();}}
 function setTS(s){pushUndo();const t=tables.find(t=>t.id===selectedTableId);if(t){t.size=s;render();}}
@@ -3246,7 +3275,7 @@ function saveGuest(){
   }
   closeGuestModal();render();
 }
-function deleteGuest(){if(!editingGuestId||!confirm('确认删除？'))return;pushUndo();guests=guests.filter(g=>g.id!==editingGuestId);closeGuestModal();render();}
+function deleteGuest(){if(!editingGuestId||!confirm('确认删除？'))return;pushUndo();guests=guests.filter(g=>g.id!==editingGuestId);closeGuestModal();render();AutoSaveManager.onMajorOp('deleteGuest');}
 
 // ══════════════════════════════════════════════════
 // REFRESH CHECK
@@ -3296,7 +3325,7 @@ function importList(input){
       g.slots=buildSlots(g);guests.push(g);added++;
     }
     render();
-    if(added)console.log('[List] 导入',added,'条，从第'+(start+1)+'行开始');
+    if(added){console.log('[List] 导入',added,'条，从第'+(start+1)+'行开始');AutoSaveManager.onMajorOp('importList');}
   };
   r.readAsText(file,'UTF-8');input.value='';
 }
@@ -3318,7 +3347,7 @@ function importCsv(input){
       const name2=n2i>=0?(cols[n2i]||''):'',color=PAL_BG[guestCounter%PAL_BG.length];
       guestCounter++;const g={id:guestCounter,name,name2,side,type,children,childNames:[],status,note,color,slots:[]};g.slots=buildSlots(g);guests.push(g);
     }
-    render();
+    render();AutoSaveManager.onMajorOp('importList');
   };
   r.readAsText(file,'UTF-8');input.value='';
 }
@@ -3511,7 +3540,13 @@ async function deleteServerBackup(filename){
 async function populateSaveSlots(){
   const el=document.getElementById('saveServerDrop');
   const dirLabel=AUTH_CODE?(VIEW_ONLY&&VIEW_PREFIX?`data/${VIEW_PREFIX}…/`:`data/${AUTH_CODE}/`):'—';
-  el.innerHTML=`
+  // AS 开关行
+  const asRow=document.createElement('div');
+  asRow.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#f6fbf7;border-bottom:1px solid #ddeee4';
+  asRow.innerHTML=`<span style="font-size:11px;color:#3A5A4A">自动保存</span><button id="btnDropAS" onclick="toggleSaveDropAS()"></button>`;
+  el.innerHTML='';el.appendChild(asRow);
+  _renderASBtn(document.getElementById('btnDropAS'));
+  el.innerHTML+=`
     <div class="dm-item dm-dir-label" style="padding:5px 10px">
       <span style="font-size:10px">📂 <code style="font-size:10px">${dirLabel}</code></span>
     </div>
@@ -3575,6 +3610,72 @@ async function saveJsonServerDirect(){
   }catch(e){console.warn('Server save:',e);}
 }
 async function saveJsonServer(){await saveJsonServerDirect();}
+
+// ══ AUTO-SAVE MANAGER ═══════════════════════════════
+// 统一调度自动保存：定时 / 空闲 / 大操作触发
+// 三态优先级：场次覆盖(_sessASOverride) > 全局配置(SC_AS_CFG.globalEnabled)
+const AutoSaveManager={
+  _timer:null,_idleTimer:null,_lastSaveTs:0,
+  effectiveEnabled(){
+    if(_sessASOverride===true)return true;
+    if(_sessASOverride===false)return false;
+    return SC_AS_CFG.globalEnabled;
+  },
+  init(){
+    this.destroy();
+    if(!AUTH_CODE||VIEW_ONLY||!this.effectiveEnabled())return;
+    this._timer=setInterval(()=>this._trigger('timer'),SC_AS_CFG.interval*60000);
+    this._bindIdle();
+  },
+  _boundReset:null,
+  _bindIdle(){
+    const ms=SC_AS_CFG.idleMinutes*60000;
+    const reset=()=>{clearTimeout(this._idleTimer);this._idleTimer=setTimeout(()=>this._trigger('idle'),ms);};
+    this._boundReset=reset;
+    ['mousemove','keydown','touchstart','wheel'].forEach(ev=>document.addEventListener(ev,reset,{passive:true}));
+  },
+  onMajorOp(key){
+    if(!AUTH_CODE||VIEW_ONLY)return;
+    if(!this.effectiveEnabled())return;
+    if(!SC_AS_CFG.majorOpTrigger||!SC_AS_CFG.majorOps[key])return;
+    this._trigger('major:'+key);
+  },
+  _trigger(reason){
+    const now=Date.now(),min=SC_AS_CFG.minInterval*60000;
+    if(now-this._lastSaveTs<min)return;
+    this._lastSaveTs=now;
+    if(typeof _tcDebug!=='undefined'&&_tcDebug)console.log('[AutoSave] trigger:',reason);
+    saveJsonServerDirect();
+  },
+  destroy(){
+    clearInterval(this._timer);clearTimeout(this._idleTimer);
+    this._timer=null;this._idleTimer=null;
+  }
+};
+
+// 保存菜单中切换场次级 AS 开关（三态轮换：null→true→false→null）
+async function toggleSaveDropAS(){
+  _sessASOverride=_sessASOverride===null?true:_sessASOverride===true?false:null;
+  AutoSaveManager.destroy();AutoSaveManager.init();
+  // 更新按钮文字
+  const btn=document.getElementById('btnDropAS');
+  if(btn)_renderASBtn(btn);
+  // 异步写入服务器
+  if(!AUTH_CODE)return;
+  try{
+    await fetch(authUrl('save.php?action=setAS'),{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'val='+encodeURIComponent(JSON.stringify(_sessASOverride))
+    });
+  }catch(e){console.warn('[AS toggle]',e);}
+}
+function _renderASBtn(btn){
+  const label=_sessASOverride===null?'继承全局':_sessASOverride?'已开启':'已关闭';
+  const on=AutoSaveManager.effectiveEnabled();
+  btn.textContent=label;
+  btn.style.cssText=`font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid ${on?'#2FBB7A':'#ccc'};background:${on?'#e8faf0':'#f5f5f5'};color:${on?'#1A9060':'#888'};cursor:pointer`;
+}
 
 // openRecentsModal removed (replaced by dropdown)
 function closeRecentsModal(){document.getElementById('recentsModal').classList.remove('open');}
@@ -4128,6 +4229,7 @@ document.addEventListener('touchstart',function _firstTouch(){
 // 屏幕旋转 / 窗口大小变化时重新检测（宽屏切换回 PC 后恢复分类列表）
 window.addEventListener('orientationchange',()=>setTimeout(applyHintMode,400));
 window.addEventListener('resize',()=>{clearTimeout(window._hintRT);window._hintRT=setTimeout(applyHintMode,300);});
+AutoSaveManager.init();
 
 // ══════════════════════════════════════════════════
 // 首次进入确认 + 引导 overlay
@@ -4146,6 +4248,14 @@ function showFirstRun(){
   } else {
     document.getElementById('frTitle').value='婚宴座位图';
     document.getElementById('frInfo').innerHTML='<div><b>🔒 授权码：</b>'+AUTH_CODE+'</div>';
+  }
+  // 自动保存状态提示
+  const lbl=document.getElementById('frAsLabel');
+  if(lbl){
+    const on=AutoSaveManager.effectiveEnabled();
+    const src=_sessASOverride===null?'（全局）':_sessASOverride?'（本场次）':'（本场次）';
+    lbl.textContent=(on?'已开启':'已关闭')+src;
+    lbl.style.color=on?'#1A9060':'#888';
   }
   modal.style.display='flex';
 }
