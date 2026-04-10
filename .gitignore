@@ -1,0 +1,22 @@
+# ── 用户数据目录（授权码 / 备份 JSON / 底图）──
+data/*
+!data/.gitkeep
+!data/auth.example.json
+
+# ── 旧版本备份目录 ──
+backup/
+Backupdata/
+
+# ── 个人 / 无关文件 ──
+*.xlsx
+WS13.html
+WSCV.html
+WTN.json
+
+# ── Claude Code 工作目录 ──
+.claude/
+
+# ── 系统文件 ──
+.DS_Store
+Thumbs.db
+desktop.ini
