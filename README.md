@@ -8,7 +8,13 @@
 ![License](https://img.shields.io/badge/license-MIT-2FBB7A)
 ![Version](https://img.shields.io/badge/version-V0.24-blue)
 
-![SeatCard 预览](preview.png)
+<table>
+  <tr>
+    <td align="center"><img src="image/Dashboard管理界面.jpg" width="320" alt="Dashboard 管理界面"/><br/><sub>Dashboard 管理界面</sub></td>
+    <td align="center"><img src="image/添加人员菜单.jpg" width="320" alt="添加人员菜单"/><br/><sub>添加人员菜单</sub></td>
+    <td align="center"><img src="image/上下布局移动端支持.jpg" width="160" alt="移动端上下布局"/><br/><sub>移动端适配</sub></td>
+  </tr>
+</table>
 
 ![SeatCard 演示](preview.gif)
 
