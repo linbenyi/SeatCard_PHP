@@ -13,9 +13,11 @@
 $_sc_pw = file_exists(__DIR__.'/data/sc_config.json')
     ? (json_decode(file_get_contents(__DIR__.'/data/sc_config.json'),true)??[])
     : [];
-define('DASH_PASS', $_sc_pw['dash_pass'] ?? 'superSC2026');
+define('DASH_PASS',  $_sc_pw['dash_pass']  ?? 'superSC2026');
+define('DASH_PASS2', $_sc_pw['dash_pass2'] ?? '');
+define('DASH_PASS3', $_sc_pw['dash_pass3'] ?? '');
 unset($_sc_pw);
-define('DASH_VER',  'V0.23');
+define('DASH_VER',  'V0.25');
 define('AUTH_FILE', __DIR__.'/data/auth.json');
 define('CFG_FILE',  __DIR__.'/data/sc_config.json');
 define('DATA_DIR',  __DIR__.'/data/');
@@ -271,7 +273,7 @@ if(($_GET['api']??'')==='1' && $_SERVER['REQUEST_METHOD']==='POST'){
 // ── 登录/退出 ────────────────────────────────────────────────────────────────
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(($_POST['action']??'')==='logout'){$_SESSION['sc_dash']=false;session_destroy();header('Location: dashboard.php');exit;}
-    if(!($_SESSION['sc_dash']??false)&&($_POST['pass']??'')===DASH_PASS)$_SESSION['sc_dash']=true;
+    if(!($_SESSION['sc_dash']??false)){$_p=$_POST['pass']??'';if($_p===DASH_PASS||(DASH_PASS2!==''&&$_p===DASH_PASS2)||(DASH_PASS3!==''&&$_p===DASH_PASS3))$_SESSION['sc_dash']=true;}
 }
 
 if(!($_SESSION['sc_dash']??false)):

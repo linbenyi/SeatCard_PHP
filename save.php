@@ -51,6 +51,23 @@ if (!$registered) {
     http_response_code(403);
     echo json_encode(['error' => 'code not registered']); exit;
 }
+// ── setAS：更新场次级自动保存开关 ──
+if (($_GET['action'] ?? '') === 'setAS') {
+    $rawVal = trim($_POST['val'] ?? 'null');
+    $val = json_decode($rawVal); // null | true | false
+    $newList = [];
+    foreach ($authList as &$e) {
+        if (($e['code'] ?? '') === $rawAuth) {
+            if ($val === null) unset($e['autoSave']);
+            else $e['autoSave'] = (bool)$val;
+        }
+        $newList[] = $e;
+    }
+    unset($e);
+    file_put_contents($authJsonPath, json_encode($newList, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
+    echo json_encode(['ok' => true]); exit;
+}
+
 // ── 3. 严格限定在 data/{auth}/ 子目录 ──
 $authDir = BASE_DATA_DIR . $rawAuth . '/';
 
