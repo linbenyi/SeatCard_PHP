@@ -17,7 +17,7 @@ function adRA(){if(!file_exists(AUTH_FILE))return[];return json_decode(file_get_
 function adWA($l){file_put_contents(AUTH_FILE,json_encode($l,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),LOCK_EX);}
 function adRC(){
     $defOps=['batchSeat'=>true,'importList'=>true,'addTable'=>true,'deleteTable'=>true,'deleteGuest'=>true,'seat'=>false,'unseat'=>false,'addGuest'=>false,'moveTable'=>false];
-    $d=['yearStart'=>2026,'yearEnd'=>2030,'autoSave'=>['globalEnabled'=>true,'interval'=>10,'minInterval'=>2,'idleMinutes'=>3,'majorOpTrigger'=>true,'majorOps'=>$defOps]];
+    $d=['yearStart'=>2026,'yearEnd'=>2030,'autoSave'=>['globalEnabled'=>false,'interval'=>10,'minInterval'=>2,'idleMinutes'=>3,'majorOpTrigger'=>true,'majorOps'=>$defOps]];
     if(!file_exists(CFG_FILE))return $d;
     $c=json_decode(file_get_contents(CFG_FILE),true)??[];
     if(isset($c['autoSave'])&&is_array($c['autoSave'])){

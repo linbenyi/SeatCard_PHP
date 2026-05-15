@@ -337,7 +337,7 @@ body.theme-pink.dark code{background:#3D1B2A!important;color:#FBCFE8!important}
 <body>
 <div class="card">
   <button id="authDarkBtn" onclick="toggleAuthDark()" title="切换主题">🌙</button>
-  <button id="debugBtn" onclick="location.href=location.pathname+'?debug=1'" title="Debug 模式 · 绕过授权直接进入" style="position:absolute;top:14px;right:54px;background:none;border:none;font-size:14px;cursor:pointer;opacity:.45;padding:2px 4px;border-radius:6px;transition:opacity .15s,background .15s;color:#EC4899;display:inline-flex;align-items:center;gap:3px;font-family:'Noto Sans SC',sans-serif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M14 9V5a3 3 0 00-6 0v4"/><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M9 14h6"/></svg></button>
+  <button id="debugBtn" onclick="location.href=location.pathname+'?debug=1'" title="Debug 模式 · 绕过授权直接进入" style="position:absolute;top:14px;right:54px;background:none;border:none;font-size:14px;cursor:pointer;opacity:.45;padding:2px 4px;border-radius:6px;transition:opacity .15s,background .15s;color:#EC4899;display:none;align-items:center;gap:3px;font-family:'Noto Sans SC',sans-serif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M14 9V5a3 3 0 00-6 0v4"/><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M9 14h6"/></svg></button>
   <svg class="logo-svg" viewBox="0 0 56 56" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
     <!-- round table -->
     <circle cx="28" cy="28" r="11" fill="currentColor" fill-opacity=".13" stroke="currentColor" stroke-width="2"/>
@@ -2121,7 +2121,7 @@ body.theme-pink #bottomToolbar{position:relative;z-index:5}
 <?php
 // ── 自动保存配置（注入到 JS）──
 function _scAsCfg(){
-    $d=['globalEnabled'=>true,'interval'=>10,'minInterval'=>2,'idleMinutes'=>3,'majorOpTrigger'=>true,
+    $d=['globalEnabled'=>false,'interval'=>10,'minInterval'=>2,'idleMinutes'=>3,'majorOpTrigger'=>true,
         'majorOps'=>['batchSeat'=>true,'importList'=>true,'addTable'=>true,'deleteTable'=>true,'deleteGuest'=>true,
                      'seat'=>false,'unseat'=>false,'addGuest'=>false,'moveTable'=>false]];
     $f=__DIR__.'/data/sc_config.json';
