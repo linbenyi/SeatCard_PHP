@@ -176,11 +176,10 @@ https://yoursite.com/seatcard/
 
 ### 修改后台密码
 
-| 文件 | 常量 | 默认值 | 说明 |
-|------|------|--------|------|
-| `admin.php` | `ADMIN_PASS` | `admin888` | 管理后台密码 |
-| `dashboard.php` | `DASH_PASS` | `superSC2026` | 看板密码 |
-| `index.php` | `GLOBAL_PASS` | _(空)_ | 全局访问密码（留空则不启用）|
+| 文件 | 常量 | 默认值 |
+|------|------|--------|
+| `admin.php` | `ADMIN_PASS` | `admin888` |
+| `dashboard.php` | `DASH_PASS` | `superSC2026` |
 
 ### Nginx 配置（禁止直接访问 data 目录）
 
